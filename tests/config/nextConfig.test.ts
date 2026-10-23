@@ -40,3 +40,9 @@ describe("next.config", () => {
         expect(nextConfig.poweredByHeader).toBe(false);
     });
 });
+
+describe("test environment", () => {
+    it("runs tests in test mode even when the build sets NODE_ENV=production", () => {
+        expect(process.env.NODE_ENV).toBe("test");
+    });
+});
