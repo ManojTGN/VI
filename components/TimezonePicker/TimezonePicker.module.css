@@ -1,0 +1,334 @@
+.slot {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.trigger {
+    --rise-delay: 0.2s;
+
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4em 0;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font-family: var(--font-display);
+    font-size: max(11px, calc(var(--tile-h) * 0.13));
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.trigger:hover,
+.trigger[data-state="open"] {
+    color: var(--ink);
+}
+
+.trigger:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 6px;
+}
+
+.label {
+    margin-right: -0.2em;
+    text-decoration: underline dashed currentColor;
+    text-decoration-thickness: max(1px, 0.08em);
+    text-underline-offset: 0.45em;
+}
+
+.pin {
+    width: 1.35em;
+    height: 1.35em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linejoin: round;
+}
+
+.measure {
+    position: absolute;
+    top: 0;
+    left: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgb(5 6 12 / 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.overlay[data-state="open"] {
+    animation: fade-in 0.35s ease both;
+}
+
+.overlay[data-state="closed"] {
+    animation: fade-out 0.32s ease 0.04s both;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: min(420px, 100%);
+    max-height: min(620px, 86dvh);
+    padding: 22px 22px 8px;
+    background: rgb(16 10 26 / 0.94);
+    border: 1px solid rgb(255 255 255 / 0.08);
+    box-shadow:
+        0 30px 80px -20px rgb(0 0 0 / 0.8),
+        0 0 60px -20px rgb(255 42 138 / 0.45);
+    font-family: var(--font-digit), system-ui, sans-serif;
+    font-weight: 500;
+    outline: none;
+}
+
+.panel[data-state="open"] {
+    animation: panel-in 0.55s var(--ease-out) both;
+}
+
+.panel[data-state="closed"] {
+    animation: panel-out 0.28s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.title {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 15px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+}
+
+.close {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin-right: -8px;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.close:hover {
+    color: var(--ink);
+}
+
+.close:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+}
+
+.close svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+
+.search {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid rgb(255 255 255 / 0.12);
+    border-radius: 0;
+    background: rgb(255 255 255 / 0.04);
+    color: var(--ink);
+    font: inherit;
+    font-size: 16px;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.search::placeholder {
+    color: rgb(160 139 184 / 0.7);
+}
+
+.search:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgb(34 227 255 / 0.15);
+}
+
+.list {
+    flex: 1;
+    min-height: 0;
+    margin: 0 -22px;
+    padding: 0 10px 12px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    list-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.15) transparent;
+}
+
+.groupHeading {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 14px 12px 6px;
+    background: rgb(16 10 26);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 36px 11px 12px;
+    border-left: 2px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.option[data-highlighted="true"] {
+    background: rgb(255 42 138 / 0.12);
+}
+
+.option[aria-selected="true"] {
+    border-left-color: var(--pink);
+}
+
+.option:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: -2px;
+}
+
+.city {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 15px;
+    color: var(--ink);
+}
+
+.offset {
+    margin-left: auto;
+    font-size: 12px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+}
+
+.check {
+    position: absolute;
+    right: 10px;
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: var(--pink);
+    stroke-width: 2.5;
+    opacity: 0;
+}
+
+.option[aria-selected="true"] .check {
+    opacity: 1;
+}
+
+.empty {
+    padding: 28px 12px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+@media (max-width: 560px) {
+    .overlay {
+        place-items: end stretch;
+        padding: 0;
+    }
+
+    .panel {
+        width: 100%;
+        max-height: 88dvh;
+        padding: 18px 16px max(8px, env(safe-area-inset-bottom));
+        border-width: 1px 0 0;
+    }
+
+    .panel[data-state="open"] {
+        animation-name: sheet-in;
+    }
+
+    .panel[data-state="closed"] {
+        animation-name: sheet-out;
+    }
+
+    .list {
+        margin: 0 -16px;
+        padding: 0 4px 12px;
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes fade-out {
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes panel-in {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.97);
+        filter: blur(6px);
+    }
+}
+
+@keyframes panel-out {
+    to {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+        filter: blur(4px);
+    }
+}
+
+@keyframes sheet-in {
+    from {
+        transform: translateY(100%);
+    }
+}
+
+@keyframes sheet-out {
+    to {
+        transform: translateY(100%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .overlay,
+    .panel {
+        animation-duration: 0.01s !important;
+        animation-delay: 0s !important;
+    }
+}

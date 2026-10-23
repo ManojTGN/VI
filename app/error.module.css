@@ -1,0 +1,43 @@
+.screen {
+    min-height: 100dvh;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 16px;
+    padding: 24px;
+    text-align: center;
+}
+
+.title {
+    font-family: var(--font-display), sans-serif;
+    font-weight: 400;
+    font-size: clamp(48px, 12vw, 120px);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--pink);
+}
+
+.message {
+    max-width: 32ch;
+    color: var(--muted);
+}
+
+.retry {
+    padding: 10px 18px;
+    border: 1px solid var(--pink);
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.retry:hover {
+    background: rgb(255 42 138 / 0.15);
+}
+
+.retry:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 3px;
+}

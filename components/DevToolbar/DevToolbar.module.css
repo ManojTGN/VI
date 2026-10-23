@@ -1,0 +1,99 @@
+.toolbar {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    max-width: calc(100vw - 32px);
+    font-family: var(--font-digit), system-ui, sans-serif;
+    font-weight: 500;
+}
+
+.toggle {
+    padding: 8px 14px;
+    border: 1px dashed rgb(34 227 255 / 0.6);
+    background: rgb(5 6 12 / 0.85);
+    color: var(--cyan);
+    font: inherit;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+}
+
+.toggle:hover,
+.toolbar[data-open="true"] .toggle {
+    background: rgb(34 227 255 / 0.12);
+}
+
+.panel {
+    display: grid;
+    gap: 14px;
+    width: min(340px, calc(100vw - 32px));
+    max-height: min(70vh, 520px);
+    overflow-y: auto;
+    padding: 14px;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    background: rgb(12 10 22 / 0.92);
+    box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.8);
+    backdrop-filter: blur(12px);
+    animation: panel-in 0.25s var(--ease-out) both;
+}
+
+.group {
+    display: grid;
+    gap: 8px;
+}
+
+.groupTitle {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.action {
+    padding: 7px 10px;
+    border: 1px solid rgb(255 255 255 / 0.14);
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.action:hover {
+    border-color: var(--pink);
+    background: rgb(255 42 138 / 0.15);
+}
+
+.action:active {
+    background: rgb(255 42 138 / 0.3);
+}
+
+.toggle:focus-visible,
+.action:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+}
+
+@keyframes panel-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}

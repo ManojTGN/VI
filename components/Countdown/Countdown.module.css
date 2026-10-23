@@ -1,0 +1,75 @@
+.boards {
+    --tilt-x: 0;
+    --tilt-y: 0;
+
+    display: grid;
+    cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transform: perspective(calc(var(--tile-h) * 10)) rotateX(calc(var(--tilt-y) * -14deg))
+        rotateY(calc(var(--tilt-x) * 14deg));
+    transition: transform 0.6s var(--ease-out);
+}
+
+@media (hover: hover) {
+    .boards:hover {
+        --tile-glow: 0.75;
+    }
+}
+
+.board {
+    grid-area: 1 / 1;
+    display: flex;
+    gap: calc(var(--tile-h) * 0.22);
+}
+
+.countBoard {
+    transition:
+        opacity 0.7s ease,
+        filter 0.7s ease,
+        transform 0.9s var(--ease-out);
+}
+
+.boards[data-stage="revealed"] .countBoard {
+    opacity: 0;
+    filter: blur(6px);
+    transform: scale(0.97);
+    pointer-events: none;
+}
+
+.unit {
+    display: grid;
+    justify-items: center;
+    gap: calc(var(--tile-h) * 0.14);
+    opacity: 0;
+}
+
+.revealUnit {
+    --rise-duration: 0.9s;
+}
+
+.tiles {
+    display: flex;
+    gap: calc(var(--tile-h) * 0.05);
+}
+
+.label {
+    font-family: var(--font-display);
+    font-size: max(10px, calc(var(--tile-h) * 0.12));
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: -0.35em;
+    transition: opacity 0.5s ease;
+}
+
+.boards:not([data-stage="counting"]) .label {
+    opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .boards {
+        transform: none;
+    }
+}

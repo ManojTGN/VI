@@ -1,0 +1,30 @@
+.brand {
+    --rise-delay: 0.1s;
+
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    color: inherit;
+    text-decoration: none;
+}
+
+.brand:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 8px;
+}
+
+.mark {
+    display: flex;
+    transition: filter 0.4s ease;
+}
+
+.logo {
+    display: block;
+    height: max(34px, calc(var(--tile-h) * 0.6));
+    aspect-ratio: 48 / 35;
+}
+
+.brand:hover .mark,
+.brand:focus-visible .mark {
+    filter: drop-shadow(0 0 calc(var(--tile-h) * 0.15) rgb(255 42 138 / 0.7));
+}

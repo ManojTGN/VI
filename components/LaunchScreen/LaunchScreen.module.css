@@ -1,0 +1,32 @@
+.screen {
+    --tile-h: clamp(36px, min(12.5vw, 20vh), 240px);
+    --edge: clamp(16px, 4vmin, 56px);
+
+    position: relative;
+    min-height: 100dvh;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.stage {
+    position: relative;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: max(var(--edge), env(safe-area-inset-top)) max(var(--edge), env(safe-area-inset-right))
+        max(var(--edge), env(safe-area-inset-bottom)) max(var(--edge), env(safe-area-inset-left));
+    isolation: isolate;
+}
+
+.content {
+    display: grid;
+    gap: calc(var(--tile-h) * 0.3);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 0;
+    min-width: 100%;
+}
