@@ -1,5 +1,30 @@
+export type MotionPreference = "full" | "reduced";
+
+export const MOTION_STORAGE_KEY = "gta6-motion";
+
+/** The site animates by default, regardless of the operating system's setting. */
+export const DEFAULT_MOTION: MotionPreference = "full";
+
+export function parseMotionPreference(value: string | null | undefined) {
+    return value === "full" || value === "reduced" ? value : null;
+}
+
+/**
+ * `data-motion` on <html> is the single runtime source of truth: the inline
+ * script in app/layout.tsx sets it before first paint, every reduced-motion
+ * CSS rule keys off it, and the guards below read it. That keeps the CSS and
+ * the JavaScript effects from ever disagreeing.
+ */
+export function applyMotionPreference(preference: MotionPreference) {
+    document.documentElement.dataset.motion = preference;
+}
+
+export function readMotionPreference(): MotionPreference {
+    return parseMotionPreference(document.documentElement.dataset.motion) ?? DEFAULT_MOTION;
+}
+
 export function prefersReducedMotion() {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return readMotionPreference() === "reduced";
 }
 
 export function shake(element: HTMLElement, { strength = 12, duration = 700 } = {}) {

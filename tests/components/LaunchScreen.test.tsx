@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LaunchScreen } from "@/components/LaunchScreen/LaunchScreen";
+import { resetMotionCache } from "@/hooks/useMotion";
 import { resetTimezoneCache, TIMEZONE_STORAGE_KEY } from "@/hooks/useTimezone";
 
 const FOCUSABLE = "a[href], button:not([disabled]), input, [tabindex]:not([tabindex='-1'])";
@@ -8,6 +9,7 @@ const FOCUSABLE = "a[href], button:not([disabled]), input, [tabindex]:not([tabin
 describe("LaunchScreen", () => {
     beforeEach(() => {
         resetTimezoneCache();
+        resetMotionCache();
         vi.useFakeTimers({ now: Date.UTC(2026, 9, 23, 12, 0, 0) });
     });
 
@@ -43,6 +45,7 @@ describe("LaunchScreen", () => {
         expect(focusable).toEqual([
             screen.getByRole("link", { name: /grand theft auto vi/i }),
             screen.getByRole("button", { name: /change time zone/i }),
+            screen.getByRole("button", { name: /turn animations off/i }),
             screen.getByRole("button", { name: "Hide notice" }),
         ]);
     });

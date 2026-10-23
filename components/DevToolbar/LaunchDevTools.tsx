@@ -10,6 +10,7 @@ export type LaunchControls = {
     replayIntro: () => void;
     openTimezones: () => void;
     resetTimezone: () => void;
+    toggleMotion: () => void;
 };
 
 type LaunchDevToolsProps = {
@@ -42,6 +43,10 @@ export function LaunchDevTools({ controls }: LaunchDevToolsProps) {
                 },
                 { label: "Replay intro", run: controls.replayIntro },
             ],
+        },
+        {
+            title: "Motion",
+            actions: [{ label: "Toggle animations", run: controls.toggleMotion }],
         },
         {
             title: "Time zone",

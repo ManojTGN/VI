@@ -325,10 +325,19 @@
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .overlay,
-    .panel {
-        animation-duration: 0.01s !important;
-        animation-delay: 0s !important;
-    }
+/* Reduced motion keeps a fade so the dialog still registers as opening and
+   closing, but drops the lift, scale and blur -- and, on narrow screens, the
+   full-height sheet slide, which is the most vestibular motion on the page. */
+:global(html[data-motion="reduced"]) .overlay,
+:global(html[data-motion="reduced"]) .panel {
+    animation-duration: 0.2s;
+    animation-delay: 0s;
+}
+
+:global(html[data-motion="reduced"]) .panel[data-state="open"] {
+    animation-name: fade-in;
+}
+
+:global(html[data-motion="reduced"]) .panel[data-state="closed"] {
+    animation-name: fade-out;
 }

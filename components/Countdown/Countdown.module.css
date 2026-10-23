@@ -68,8 +68,6 @@
     opacity: 0;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .boards {
-        transform: none;
-    }
+:global(html[data-motion="reduced"]) .boards {
+    transform: none;
 }

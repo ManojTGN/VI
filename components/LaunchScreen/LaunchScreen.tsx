@@ -8,11 +8,13 @@ import { Confetti } from "@/components/Confetti/Confetti";
 import { Countdown } from "@/components/Countdown/Countdown";
 import { Disclaimer } from "@/components/Disclaimer/Disclaimer";
 import type { LaunchControls } from "@/components/DevToolbar/LaunchDevTools";
+import { MotionToggle } from "@/components/MotionToggle/MotionToggle";
 import { TimezonePicker } from "@/components/TimezonePicker/TimezonePicker";
 import { useClockOffset } from "@/hooks/useClockOffset";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useFinaleStage } from "@/hooks/useFinaleStage";
 import { useIdleTask } from "@/hooks/useIdleTask";
+import { useMotion } from "@/hooks/useMotion";
 import { useTimezone } from "@/hooks/useTimezone";
 import { shake } from "@/lib/motion";
 import { getAllTimezones, getReleaseInstant } from "@/lib/timezones";
@@ -32,6 +34,7 @@ const LaunchDevTools =
 export function LaunchScreen() {
     const stageRef = useRef<HTMLDivElement>(null);
     const { timezone, localTimezone, selectTimezone, clearTimezone } = useTimezone();
+    const { motion, setMotion } = useMotion();
     const [isPickerOpen, setIsPickerOpen] = useState(false);
     const [targetOverride, setTargetOverride] = useState<number | null>(null);
     const [confettiBursts, setConfettiBursts] = useState(0);
@@ -63,8 +66,12 @@ export function LaunchScreen() {
             replayIntro: () => setIntroKey((key) => key + 1),
             openTimezones: () => setIsPickerOpen(true),
             resetTimezone: clearTimezone,
+            toggleMotion: () =>
+                setMotion(
+                    document.documentElement.dataset.motion === "reduced" ? "full" : "reduced",
+                ),
         }),
-        [clearTimezone, clockOffset],
+        [clearTimezone, clockOffset, setMotion],
     );
 
     return (
@@ -84,6 +91,7 @@ export function LaunchScreen() {
                                 onSelect={selectTimezone}
                             />
                         )}
+                        {motion && <MotionToggle motion={motion} onChange={setMotion} />}
                     </header>
 
                     <Countdown remaining={remaining} stage={stage} />

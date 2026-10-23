@@ -2,21 +2,24 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 
-export const motionPreference = { reduced: false };
+/** Drives the same <html data-motion> attribute the app reads at runtime. */
+export function setMotionPreference(preference: "full" | "reduced") {
+    document.documentElement.dataset.motion = preference;
+}
 
 function createAnimation(): Animation {
     return { finished: Promise.resolve(), cancel: vi.fn() } as unknown as Animation;
 }
 
 beforeEach(() => {
-    motionPreference.reduced = false;
+    setMotionPreference("full");
     localStorage.clear();
 
     Element.prototype.animate = vi.fn(createAnimation);
     Element.prototype.getAnimations = vi.fn(() => []);
 
     window.matchMedia = vi.fn((query: string) => ({
-        matches: query.includes("prefers-reduced-motion") && motionPreference.reduced,
+        matches: false,
         media: query,
         onchange: null,
         addListener: vi.fn(),

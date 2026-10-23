@@ -91,10 +91,8 @@
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .glow,
-    .glow::before {
-        animation: none;
-        transition: none;
-    }
+:global(html[data-motion="reduced"]) .glow,
+:global(html[data-motion="reduced"]) .glow::before {
+    animation: none;
+    transition: none;
 }

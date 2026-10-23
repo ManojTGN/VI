@@ -1,0 +1,40 @@
+.toggle {
+    --rise-delay: 0.25s;
+
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: max(30px, calc(var(--tile-h) * 0.28));
+    height: max(30px, calc(var(--tile-h) * 0.28));
+    margin-right: -0.35em;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.toggle:hover,
+.toggle[aria-pressed="false"] {
+    color: var(--ink);
+}
+
+.toggle:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 4px;
+}
+
+/* Sized independently of the button so the glyph sits closer to the time zone
+   label's weight, while the button keeps a comfortable tap target. */
+.icon {
+    width: max(15px, calc(var(--tile-h) * 0.15));
+    height: max(15px, calc(var(--tile-h) * 0.15));
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+}
+
+.slash {
+    stroke-width: 2;
+}

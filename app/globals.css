@@ -56,9 +56,19 @@ body {
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .rise-in {
-        animation-duration: 0.01s;
-        animation-delay: 0s;
+/* Reduced motion keeps the choreography but drops the travel, scale and blur.
+   A plain fade carries no vestibular risk, so the page still reads as alive
+   instead of snapping into place fully formed. */
+@keyframes rise-fade {
+    from {
+        opacity: 0;
     }
+    to {
+        opacity: 1;
+    }
+}
+
+html[data-motion="reduced"] .rise-in {
+    animation-name: rise-fade;
+    animation-duration: 0.5s;
 }

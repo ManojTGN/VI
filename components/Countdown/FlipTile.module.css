@@ -106,12 +106,30 @@
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .front {
-        display: none;
+/* Reduced motion swaps the 3D flap for a cross-fade between the outgoing and
+   incoming glyph. The digit still visibly changes -- which is the whole point
+   of a countdown -- without any rotation, travel or perspective. Both halves
+   fade together, so the +0.3s sequencing delay on .back is dropped. */
+@keyframes fade-out-half {
+    to {
+        opacity: 0;
     }
+}
 
-    .back {
-        animation: none;
+@keyframes fade-in-half {
+    from {
+        opacity: 0;
     }
+}
+
+:global(html[data-motion="reduced"]) .front,
+:global(html[data-motion="reduced"]) .back {
+    animation-name: fade-out-half;
+    animation-duration: 0.28s;
+    animation-timing-function: linear;
+    animation-delay: var(--flip-delay, 0ms);
+}
+
+:global(html[data-motion="reduced"]) .back {
+    animation-name: fade-in-half;
 }
