@@ -9,6 +9,7 @@ import { Countdown } from "@/components/Countdown/Countdown";
 import { Disclaimer } from "@/components/Disclaimer/Disclaimer";
 import type { LaunchControls } from "@/components/DevToolbar/LaunchDevTools";
 import { MotionToggle } from "@/components/MotionToggle/MotionToggle";
+import { PictureInPictureButton } from "@/components/PictureInPicture/PictureInPictureButton";
 import { TimezonePicker } from "@/components/TimezonePicker/TimezonePicker";
 import { useClockOffset } from "@/hooks/useClockOffset";
 import { useCountdown } from "@/hooks/useCountdown";
@@ -17,7 +18,7 @@ import { useIdleTask } from "@/hooks/useIdleTask";
 import { useMotion } from "@/hooks/useMotion";
 import { useTimezone } from "@/hooks/useTimezone";
 import { shake } from "@/lib/motion";
-import { getAllTimezones, getReleaseInstant } from "@/lib/timezones";
+import { getAllTimezones, getReleaseInstant, getTimezoneLabel } from "@/lib/timezones";
 import styles from "./LaunchScreen.module.css";
 
 const LaunchDevTools =
@@ -36,17 +37,16 @@ export function LaunchScreen() {
     const { timezone, localTimezone, selectTimezone, clearTimezone } = useTimezone();
     const { motion, setMotion } = useMotion();
     const [isPickerOpen, setIsPickerOpen] = useState(false);
-    const [targetOverride, setTargetOverride] = useState<number | null>(null);
+    const [timeShift, setTimeShift] = useState(0);
     const [confettiBursts, setConfettiBursts] = useState(0);
     const [introKey, setIntroKey] = useState(0);
 
-    const target = useMemo(
-        () => targetOverride ?? (timezone ? getReleaseInstant(timezone) : null),
-        [targetOverride, timezone],
-    );
-    const clockOffset = useClockOffset();
+    const target = useMemo(() => (timezone ? getReleaseInstant(timezone) : null), [timezone]);
+    const timezoneLabel = useMemo(() => (timezone ? getTimezoneLabel(timezone) : null), [timezone]);
+    const serverOffset = useClockOffset();
+    const clockOffset = serverOffset + timeShift;
     const remaining = useCountdown(target, clockOffset);
-    const stage = useFinaleStage(remaining, target);
+    const stage = useFinaleStage(remaining);
     const isRevealed = stage === "revealed";
 
     useIdleTask(getAllTimezones);
@@ -59,8 +59,12 @@ export function LaunchScreen() {
 
     const controls = useMemo<LaunchControls>(
         () => ({
-            finishIn: (seconds) => setTargetOverride(Date.now() + clockOffset + seconds * 1000),
-            resetToReleaseDate: () => setTargetOverride(null),
+            finishIn: (seconds) => {
+                if (target !== null) {
+                    setTimeShift(target - seconds * 1000 - (Date.now() + serverOffset));
+                }
+            },
+            resetToReleaseDate: () => setTimeShift(0),
             fireConfetti: () => setConfettiBursts((count) => count + 1),
             shake: () => stageRef.current && shake(stageRef.current),
             replayIntro: () => setIntroKey((key) => key + 1),
@@ -71,7 +75,7 @@ export function LaunchScreen() {
                     document.documentElement.dataset.motion === "reduced" ? "full" : "reduced",
                 ),
         }),
-        [clearTimezone, clockOffset, setMotion],
+        [clearTimezone, serverOffset, setMotion, target],
     );
 
     return (
@@ -82,16 +86,25 @@ export function LaunchScreen() {
                 <div key={introKey} className={styles.content}>
                     <header className={styles.header}>
                         <Brand />
-                        {timezone && localTimezone && (
-                            <TimezonePicker
-                                timezone={timezone}
-                                localTimezone={localTimezone}
-                                isOpen={isPickerOpen}
-                                onOpenChange={setIsPickerOpen}
-                                onSelect={selectTimezone}
+                        <div className={styles.controls}>
+                            {motion && !isRevealed && (
+                                <MotionToggle motion={motion} onChange={setMotion} />
+                            )}
+                            <PictureInPictureButton
+                                target={target}
+                                clockOffset={clockOffset}
+                                timezoneLabel={timezoneLabel}
                             />
-                        )}
-                        {motion && <MotionToggle motion={motion} onChange={setMotion} />}
+                            {timezone && localTimezone && (
+                                <TimezonePicker
+                                    timezone={timezone}
+                                    localTimezone={localTimezone}
+                                    isOpen={isPickerOpen}
+                                    onOpenChange={setIsPickerOpen}
+                                    onSelect={selectTimezone}
+                                />
+                            )}
+                        </div>
                     </header>
 
                     <Countdown remaining={remaining} stage={stage} />
@@ -100,7 +113,8 @@ export function LaunchScreen() {
                 <Disclaimer />
             </div>
 
-            {(isRevealed || confettiBursts > 0) && <Confetti key={`${target}-${confettiBursts}`} />}
+            {isRevealed && <Confetti />}
+            {confettiBursts > 0 && <Confetti key={confettiBursts} />}
 
             {LaunchDevTools && <LaunchDevTools controls={controls} />}
         </main>

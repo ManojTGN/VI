@@ -4,6 +4,18 @@ import { useEffect, useRef, useState } from "react";
 
 export type LabelFit = "full" | "short" | "icon";
 
+export function measureLabelRoom(slot: HTMLElement) {
+    const row = slot.parentElement;
+    const first = row?.firstElementChild;
+
+    if (!row || !first) {
+        return slot.clientWidth;
+    }
+
+    const freeSpace = first.getBoundingClientRect().left - row.getBoundingClientRect().left;
+    return slot.clientWidth + Math.max(0, freeSpace);
+}
+
 export function useLabelFit(label: string) {
     const slotRef = useRef<HTMLDivElement>(null);
     const fullRef = useRef<HTMLSpanElement>(null);
@@ -20,7 +32,7 @@ export function useLabelFit(label: string) {
         }
 
         const observer = new ResizeObserver(() => {
-            const room = slot.clientWidth;
+            const room = measureLabelRoom(slot);
 
             if (full.offsetWidth <= room) {
                 setFit("full");
@@ -31,7 +43,9 @@ export function useLabelFit(label: string) {
             }
         });
 
-        [slot, full, short].forEach((element) => observer.observe(element));
+        [slot, slot.parentElement, full, short].forEach(
+            (element) => element && observer.observe(element),
+        );
         return () => observer.disconnect();
     }, [label]);
 

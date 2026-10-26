@@ -47,11 +47,6 @@ export const viewport: Viewport = {
     themeColor: "#05060c",
 };
 
-// Stamps a saved choice onto <html> before the first paint, so the intro never
-// animates for someone who turned animations off. The attribute is deliberately
-// absent from the JSX below: React then never tracks it, so adding it here is
-// not a hydration mismatch, and no attribute at all means full motion -- which
-// is also what someone with JavaScript disabled gets.
 const motionScript = `try{var m=localStorage.getItem(${JSON.stringify(
     MOTION_STORAGE_KEY,
 )});if(m==="reduced"||m==="full")document.documentElement.dataset.motion=m}catch(e){}`;

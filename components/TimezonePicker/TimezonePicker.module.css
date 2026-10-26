@@ -1,5 +1,5 @@
 .slot {
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
     display: flex;
     justify-content: flex-end;
@@ -325,9 +325,6 @@
     }
 }
 
-/* Reduced motion keeps a fade so the dialog still registers as opening and
-   closing, but drops the lift, scale and blur -- and, on narrow screens, the
-   full-height sheet slide, which is the most vestibular motion on the page. */
 :global(html[data-motion="reduced"]) .overlay,
 :global(html[data-motion="reduced"]) .panel {
     animation-duration: 0.2s;

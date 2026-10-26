@@ -1,48 +1,73 @@
-const MIN_CORRECTION_MS = 1500;
 const MAX_ROUND_TRIP_MS = 5000;
-const DATE_HEADER_RESOLUTION_MS = 1000;
 
 type ClockSample = {
-    dateHeader: string | null;
-    ageHeader: string | null;
+    serverTime: number;
     requestStart: number;
     requestEnd: number;
 };
 
-export function estimateClockOffset({
-    dateHeader,
-    ageHeader,
+type ClockReading = {
+    offset: number;
+    roundTrip: number;
+};
+
+type MeasureOptions = {
+    samples?: number;
+    fetcher?: typeof fetch;
+    signal?: AbortSignal;
+};
+
+export function readClockSample({
+    serverTime,
     requestStart,
     requestEnd,
-}: ClockSample) {
-    const serverDate = Date.parse(dateHeader ?? "");
+}: ClockSample): ClockReading | null {
     const roundTrip = requestEnd - requestStart;
 
-    if (Number.isNaN(serverDate) || roundTrip < 0 || roundTrip > MAX_ROUND_TRIP_MS) {
-        return 0;
+    if (!Number.isFinite(serverTime) || roundTrip < 0 || roundTrip > MAX_ROUND_TRIP_MS) {
+        return null;
     }
 
-    const ageSeconds = Math.max(0, Number(ageHeader) || 0);
-    const serverNow = serverDate + DATE_HEADER_RESOLUTION_MS / 2 + ageSeconds * 1000;
-    const localNow = requestStart + roundTrip / 2;
-    const offset = Math.round(serverNow - localNow);
-
-    return Math.abs(offset) < MIN_CORRECTION_MS ? 0 : offset;
+    return { offset: Math.round(serverTime - (requestStart + roundTrip / 2)), roundTrip };
 }
 
-export async function fetchClockOffset(url: string, fetcher: typeof fetch = fetch) {
-    try {
-        const requestStart = Date.now();
-        const response = await fetcher(url, { method: "HEAD", cache: "no-store" });
-        const requestEnd = Date.now();
+async function sampleServerClock(url: string, fetcher: typeof fetch, signal?: AbortSignal) {
+    const requestStart = Date.now();
+    const response = await fetcher(url, { cache: "no-store", signal });
+    const requestEnd = Date.now();
 
-        return estimateClockOffset({
-            dateHeader: response.headers.get("date"),
-            ageHeader: response.headers.get("age"),
-            requestStart,
-            requestEnd,
-        });
-    } catch {
-        return 0;
+    if (!response.ok) {
+        return null;
     }
+
+    const { now } = (await response.json()) as { now?: unknown };
+
+    return readClockSample({
+        serverTime: typeof now === "number" ? now : Number.NaN,
+        requestStart,
+        requestEnd,
+    });
+}
+
+export async function measureClockOffset(
+    url: string,
+    { samples = 3, fetcher = fetch, signal }: MeasureOptions = {},
+) {
+    let best: ClockReading | null = null;
+
+    for (let attempt = 0; attempt < samples && !signal?.aborted; attempt++) {
+        try {
+            const reading = await sampleServerClock(url, fetcher, signal);
+
+            if (reading && (!best || reading.roundTrip < best.roundTrip)) {
+                best = reading;
+            }
+        } catch {
+            if (signal?.aborted) {
+                return null;
+            }
+        }
+    }
+
+    return signal?.aborted ? null : (best?.offset ?? null);
 }

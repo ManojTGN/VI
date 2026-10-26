@@ -21,10 +21,10 @@ describe("LaunchScreen", () => {
         localStorage.setItem(TIMEZONE_STORAGE_KEY, "UTC");
 
         render(<LaunchScreen />);
-        act(() => vi.advanceTimersToNextFrame());
+        act(() => vi.advanceTimersByTime(0));
 
         expect(screen.getByRole("timer")).toHaveTextContent(
-            "26 days, 11 hours, 59 minutes until release",
+            "26 days, 12 hours, 0 minutes until release",
         );
         expect(screen.getByRole("button", { name: /time zone: utc/i })).toBeInTheDocument();
     });
@@ -36,7 +36,7 @@ describe("LaunchScreen", () => {
         expect(screen.queryByText("Grand Theft Auto", { exact: true })).toBeNull();
     });
 
-    it("tabs through the logo, the time zone picker and the notice's close button, in order", () => {
+    it("tabs through the logo, the animations toggle, the time zone picker and the notice's close button, in order", () => {
         render(<LaunchScreen />);
         act(() => vi.advanceTimersToNextFrame());
 
@@ -44,10 +44,33 @@ describe("LaunchScreen", () => {
 
         expect(focusable).toEqual([
             screen.getByRole("link", { name: /grand theft auto vi/i }),
-            screen.getByRole("button", { name: /change time zone/i }),
             screen.getByRole("button", { name: /turn animations off/i }),
+            screen.getByRole("button", { name: /change time zone/i }),
             screen.getByRole("button", { name: "Hide notice" }),
         ]);
+    });
+
+    it("adds the floating countdown button to the tab order when the browser supports it", () => {
+        window.documentPictureInPicture = {
+            requestWindow: vi.fn(),
+        } as unknown as DocumentPictureInPicture;
+
+        try {
+            render(<LaunchScreen />);
+            act(() => vi.advanceTimersToNextFrame());
+
+            const focusable = [...document.querySelectorAll<HTMLElement>(FOCUSABLE)];
+
+            expect(focusable).toEqual([
+                screen.getByRole("link", { name: /grand theft auto vi/i }),
+                screen.getByRole("button", { name: /turn animations off/i }),
+                screen.getByRole("button", { name: "Open floating countdown" }),
+                screen.getByRole("button", { name: /change time zone/i }),
+                screen.getByRole("button", { name: "Hide notice" }),
+            ]);
+        } finally {
+            delete window.documentPictureInPicture;
+        }
     });
 
     it("opens the picker from the keyboard and returns focus when it closes", () => {
@@ -114,5 +137,64 @@ describe("LaunchScreen", () => {
         act(() => vi.advanceTimersByTime(2000));
 
         expect(screen.getByRole("status")).toHaveTextContent("Grand Theft Auto VI is out now");
+    });
+
+    describe("after the release", () => {
+        function switchTimezone(timezone: string) {
+            localStorage.setItem(TIMEZONE_STORAGE_KEY, timezone);
+            act(() => {
+                window.dispatchEvent(new StorageEvent("storage", { key: TIMEZONE_STORAGE_KEY }));
+            });
+            act(() => vi.advanceTimersToNextFrame());
+        }
+
+        function renderReleased(timezone: string) {
+            vi.setSystemTime(Date.UTC(2026, 10, 19, 5, 0, 0));
+            localStorage.setItem(TIMEZONE_STORAGE_KEY, timezone);
+            render(<LaunchScreen />);
+            act(() => vi.advanceTimersToNextFrame());
+            act(() => vi.advanceTimersByTime(2000));
+        }
+
+        it("hides the animations toggle once everything has played", () => {
+            renderReleased("UTC");
+
+            expect(screen.getByRole("status")).toBeInTheDocument();
+            expect(screen.queryByRole("button", { name: /animations/i })).toBeNull();
+        });
+
+        it("counts down again in a time zone that has not reached midnight yet", () => {
+            renderReleased("UTC");
+
+            switchTimezone("America/Los_Angeles");
+
+            expect(screen.queryByRole("status")).toBeNull();
+            expect(screen.getByRole("timer")).toHaveTextContent(
+                "0 days, 2 hours, 59 minutes until release",
+            );
+            expect(
+                screen.getByRole("button", { name: /turn animations off/i }),
+            ).toBeInTheDocument();
+        });
+
+        it("reveals again when switching back to a released time zone", () => {
+            renderReleased("UTC");
+            switchTimezone("America/Los_Angeles");
+
+            switchTimezone("Asia/Kolkata");
+            act(() => vi.advanceTimersByTime(1300));
+
+            expect(screen.getByRole("status")).toHaveTextContent("Grand Theft Auto VI is out now");
+            expect(screen.queryByRole("button", { name: /animations/i })).toBeNull();
+        });
+
+        it("keeps the release on screen when moving between released time zones", () => {
+            renderReleased("UTC");
+
+            switchTimezone("Asia/Kolkata");
+
+            expect(screen.getByRole("status")).toHaveTextContent("Grand Theft Auto VI is out now");
+            expect(screen.getByRole("button", { name: /time zone: india/i })).toBeInTheDocument();
+        });
     });
 });

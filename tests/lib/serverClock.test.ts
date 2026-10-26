@@ -1,80 +1,132 @@
-import { describe, expect, it, vi } from "vitest";
-import { estimateClockOffset, fetchClockOffset } from "@/lib/serverClock";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { measureClockOffset, readClockSample } from "@/lib/serverClock";
 
-const SERVER_TIME = Date.UTC(2026, 9, 23, 12, 0, 0);
+const SERVER_TIME = Date.UTC(2026, 9, 26, 7, 37, 32);
 
-function sample(
-    localSkew: number,
-    overrides: Partial<Parameters<typeof estimateClockOffset>[0]> = {},
-) {
+function sample(localSkew: number, overrides: Partial<Parameters<typeof readClockSample>[0]> = {}) {
     const requestStart = SERVER_TIME + localSkew - 100;
 
     return {
-        dateHeader: new Date(SERVER_TIME).toUTCString(),
-        ageHeader: null,
+        serverTime: SERVER_TIME,
         requestStart,
         requestEnd: requestStart + 200,
         ...overrides,
     };
 }
 
-describe("estimateClockOffset", () => {
-    it("corrects a computer clock that is five minutes behind", () => {
-        const offset = estimateClockOffset(sample(-5 * 60_000));
-
-        expect(Math.abs(offset - 5 * 60_000)).toBeLessThanOrEqual(1000);
+function timeResponse(body: unknown, init: ResponseInit = {}) {
+    return new Response(JSON.stringify(body), {
+        headers: { "content-type": "application/json" },
+        ...init,
     });
+}
 
-    it("corrects a computer clock that is a day ahead", () => {
-        const offset = estimateClockOffset(sample(86_400_000));
-
-        expect(Math.abs(offset + 86_400_000)).toBeLessThanOrEqual(1000);
-    });
-
-    it("leaves an accurate clock alone despite the header's one-second resolution", () => {
-        expect(estimateClockOffset(sample(0))).toBe(0);
-        expect(estimateClockOffset(sample(900))).toBe(0);
-    });
-
-    it("accounts for responses served from a CDN cache", () => {
-        const cachedDate = new Date(SERVER_TIME - 120_000).toUTCString();
-
-        expect(estimateClockOffset(sample(0, { dateHeader: cachedDate, ageHeader: "120" }))).toBe(
-            0,
-        );
+describe("readClockSample", () => {
+    it("measures how far the computer clock is from the server", () => {
+        expect(readClockSample(sample(-5 * 60_000))).toEqual({
+            offset: 5 * 60_000,
+            roundTrip: 200,
+        });
+        expect(readClockSample(sample(2 * 86_400_000))?.offset).toBe(-2 * 86_400_000);
+        expect(readClockSample(sample(0))?.offset).toBe(0);
     });
 
     it.each([
-        ["a missing date header", { dateHeader: null }],
-        ["an unreadable date header", { dateHeader: "yesterday-ish" }],
+        ["a missing server time", { serverTime: Number.NaN }],
         ["a very slow request", { requestEnd: SERVER_TIME + 10_000 }],
         ["a clock that moved backwards mid-request", { requestEnd: SERVER_TIME - 60_000 }],
-    ])("ignores %s", (_, overrides) => {
-        expect(estimateClockOffset(sample(-5 * 60_000, overrides))).toBe(0);
+    ])("rejects %s", (_, overrides) => {
+        expect(readClockSample(sample(-5 * 60_000, overrides))).toBeNull();
     });
 });
 
-describe("fetchClockOffset", () => {
-    it("asks the server for the time without using the cache", async () => {
-        vi.setSystemTime(SERVER_TIME - 60_000);
-        const fetcher = vi.fn(
-            async () =>
-                new Response(null, { headers: { date: new Date(SERVER_TIME).toUTCString() } }),
-        );
-
-        const offset = await fetchClockOffset("https://manojtgn.me/VI", fetcher);
-
-        expect(fetcher).toHaveBeenCalledWith("https://manojtgn.me/VI", {
-            method: "HEAD",
-            cache: "no-store",
-        });
-        expect(Math.abs(offset - 60_000)).toBeLessThanOrEqual(1000);
+describe("measureClockOffset", () => {
+    afterEach(() => {
         vi.useRealTimers();
     });
 
-    it("falls back to the local clock when offline", async () => {
-        const fetcher = vi.fn(() => Promise.reject(new TypeError("Failed to fetch")));
+    it("reads the uncached time endpoint", async () => {
+        vi.useFakeTimers({ now: SERVER_TIME - 60_000 });
+        const fetcher = vi.fn(async () => timeResponse({ now: SERVER_TIME }));
 
-        expect(await fetchClockOffset("/VI", fetcher)).toBe(0);
+        const offset = await measureClockOffset("/VI/api/time", { samples: 1, fetcher });
+
+        expect(fetcher).toHaveBeenCalledWith("/VI/api/time", {
+            cache: "no-store",
+            signal: undefined,
+        });
+        expect(offset).toBe(60_000);
+    });
+
+    it("keeps the sample with the fastest round trip", async () => {
+        vi.useFakeTimers({ now: SERVER_TIME });
+        const delays = [900, 40, 400];
+        const fetcher = vi.fn(async () => {
+            const delay = delays.shift()!;
+            vi.advanceTimersByTime(delay);
+            return timeResponse({ now: Date.now() - delay / 2 + 3000 });
+        });
+
+        const offset = await measureClockOffset("/VI/api/time", { samples: 3, fetcher });
+
+        expect(fetcher).toHaveBeenCalledTimes(3);
+        expect(offset).toBe(3000);
+    });
+
+    it("is not fooled by CDN cache headers on the response", async () => {
+        vi.useFakeTimers({ now: SERVER_TIME });
+        const fetcher = vi.fn(async () =>
+            timeResponse(
+                { now: SERVER_TIME },
+                {
+                    headers: {
+                        "content-type": "application/json",
+                        date: new Date(SERVER_TIME).toUTCString(),
+                        age: "209742",
+                    },
+                },
+            ),
+        );
+
+        expect(await measureClockOffset("/VI/api/time", { samples: 1, fetcher })).toBe(0);
+    });
+
+    it("uses any good sample when others fail", async () => {
+        vi.useFakeTimers({ now: SERVER_TIME });
+        const fetcher = vi
+            .fn()
+            .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+            .mockResolvedValueOnce(timeResponse({ now: SERVER_TIME + 7000 }))
+            .mockResolvedValueOnce(timeResponse({ error: true }, { status: 500 }));
+
+        expect(await measureClockOffset("/VI/api/time", { samples: 3, fetcher })).toBe(7000);
+    });
+
+    it.each([
+        ["the request fails", () => Promise.reject(new TypeError("Failed to fetch"))],
+        ["the server errors", async () => timeResponse({ error: true }, { status: 500 })],
+        ["the body is not the expected shape", async () => timeResponse({ now: "soon" })],
+        ["the body is not JSON", async () => new Response("<html>")],
+    ])("reports no reading when %s", async (_, response) => {
+        const fetcher = vi.fn(response) as unknown as typeof fetch;
+
+        expect(await measureClockOffset("/VI/api/time", { samples: 2, fetcher })).toBeNull();
+    });
+
+    it("reports no reading once cancelled", async () => {
+        const controller = new AbortController();
+        const fetcher = vi.fn(async () => {
+            controller.abort();
+            return timeResponse({ now: SERVER_TIME });
+        });
+
+        const offset = await measureClockOffset("/VI/api/time", {
+            samples: 3,
+            fetcher,
+            signal: controller.signal,
+        });
+
+        expect(offset).toBeNull();
+        expect(fetcher).toHaveBeenCalledTimes(1);
     });
 });

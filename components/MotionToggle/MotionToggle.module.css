@@ -6,7 +6,6 @@
     place-items: center;
     width: max(30px, calc(var(--tile-h) * 0.28));
     height: max(30px, calc(var(--tile-h) * 0.28));
-    margin-right: -0.35em;
     border: 0;
     background: none;
     color: var(--muted);
@@ -24,8 +23,6 @@
     outline-offset: 4px;
 }
 
-/* Sized independently of the button so the glyph sits closer to the time zone
-   label's weight, while the button keeps a comfortable tap target. */
 .icon {
     width: max(15px, calc(var(--tile-h) * 0.15));
     height: max(15px, calc(var(--tile-h) * 0.15));

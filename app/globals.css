@@ -56,9 +56,6 @@ body {
     }
 }
 
-/* Reduced motion keeps the choreography but drops the travel, scale and blur.
-   A plain fade carries no vestibular risk, so the page still reads as alive
-   instead of snapping into place fully formed. */
 @keyframes rise-fade {
     from {
         opacity: 0;
@@ -71,4 +68,39 @@ body {
 html[data-motion="reduced"] .rise-in {
     animation-name: rise-fade;
     animation-duration: 0.5s;
+}
+
+.reveal-icon {
+    position: relative;
+}
+
+.reveal-icon::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+}
+
+.reveal-icon > svg {
+    opacity: 0.4;
+    transform: scale(0.84);
+    transition:
+        opacity 0.3s ease,
+        transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.reveal-icon:hover > svg,
+.reveal-icon:focus-visible > svg {
+    opacity: 1;
+    transform: scale(1.12);
+}
+
+@media (hover: none) {
+    .reveal-icon > svg {
+        opacity: 0.85;
+        transform: none;
+    }
+}
+
+html[data-motion="reduced"] .reveal-icon > svg {
+    transform: none;
 }

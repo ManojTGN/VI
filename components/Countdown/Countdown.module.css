@@ -12,8 +12,13 @@
     transition: transform 0.6s var(--ease-out);
 }
 
+.boards[data-static="true"] {
+    transform: none;
+    transition: none;
+}
+
 @media (hover: hover) {
-    .boards:hover {
+    .boards:not([data-static="true"]):hover {
         --tile-glow: 0.75;
     }
 }
@@ -45,8 +50,24 @@
     opacity: 0;
 }
 
+.unitStatic {
+    opacity: 1;
+}
+
 .revealUnit {
     --rise-duration: 0.9s;
+
+    flex: 1;
+    min-width: 0;
+}
+
+.revealTiles {
+    justify-self: stretch;
+}
+
+.revealTiles > * {
+    flex: 1;
+    width: auto;
 }
 
 .tiles {

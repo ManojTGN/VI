@@ -15,7 +15,7 @@ export const MotionToggle = memo(function MotionToggle({ motion, onChange }: Mot
     return (
         <button
             type="button"
-            className={`${styles.toggle} rise-in`}
+            className={`${styles.toggle} reveal-icon rise-in`}
             aria-pressed={isFull}
             title={isFull ? "Animations on" : "Animations off"}
             aria-label={

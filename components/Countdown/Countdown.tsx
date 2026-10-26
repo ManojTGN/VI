@@ -11,6 +11,7 @@ import styles from "./Countdown.module.css";
 type CountdownProps = {
     remaining: number | null;
     stage: FinaleStage;
+    isStatic?: boolean;
 };
 
 const TIME_UNITS: { key: keyof Duration; label: string }[] = [
@@ -20,15 +21,16 @@ const TIME_UNITS: { key: keyof Duration; label: string }[] = [
     { key: "seconds", label: "Sec" },
 ];
 
-const REVEAL_WORDS = ["OUT", "NOW"];
+const REVEAL_WORDS = ["OUT", "NOW", "!!!"];
 const DIGITS_PER_UNIT = 2;
 
 function riseDelay(seconds: number) {
     return { "--rise-delay": `${seconds}s` } as CSSProperties;
 }
 
-export function Countdown({ remaining, stage }: CountdownProps) {
+export function Countdown({ remaining, stage, isStatic = false }: CountdownProps) {
     const { ref: tiltRef, onPointerMove, onPointerLeave } = usePointerTilt<HTMLDivElement>();
+    const entrance = isStatic ? styles.unitStatic : "rise-in";
 
     const isReady = remaining !== null;
     const isClearing = stage !== "counting";
@@ -37,11 +39,12 @@ export function Countdown({ remaining, stage }: CountdownProps) {
 
     return (
         <div
-            ref={tiltRef}
+            ref={isStatic ? undefined : tiltRef}
             className={styles.boards}
             data-stage={stage}
-            onPointerMove={onPointerMove}
-            onPointerLeave={onPointerLeave}
+            data-static={isStatic}
+            onPointerMove={isStatic ? undefined : onPointerMove}
+            onPointerLeave={isStatic ? undefined : onPointerLeave}
         >
             <section
                 className={clsx(styles.board, styles.countBoard)}
@@ -59,7 +62,7 @@ export function Countdown({ remaining, stage }: CountdownProps) {
                     return (
                         <div
                             key={unit.key}
-                            className={clsx(styles.unit, isReady && "rise-in")}
+                            className={clsx(styles.unit, isReady && entrance)}
                             style={riseDelay(0.35 + unitIndex * 0.12)}
                         >
                             <div className={styles.tiles} aria-hidden>
@@ -71,6 +74,7 @@ export function Countdown({ remaining, stage }: CountdownProps) {
                                             key={digitIndex}
                                             glyph={isClearing ? "" : digit}
                                             delayIndex={isClearing ? tileIndex : 0}
+                                            liftOnHover={!isStatic}
                                         />
                                     );
                                 })}
@@ -88,11 +92,11 @@ export function Countdown({ remaining, stage }: CountdownProps) {
                     <p className="sr-only">Grand Theft Auto VI is out now</p>
                     {REVEAL_WORDS.map((word, wordIndex) => (
                         <div
-                            key={word}
-                            className={clsx(styles.unit, styles.revealUnit, "rise-in")}
+                            key={wordIndex}
+                            className={clsx(styles.unit, styles.revealUnit, entrance)}
                             style={riseDelay(wordIndex * 0.1)}
                         >
-                            <div className={styles.tiles} aria-hidden>
+                            <div className={clsx(styles.tiles, styles.revealTiles)} aria-hidden>
                                 {[...word].map((letter, letterIndex) => {
                                     const tileIndex = wordIndex * word.length + letterIndex;
 
@@ -102,6 +106,7 @@ export function Countdown({ remaining, stage }: CountdownProps) {
                                             glyph={letter}
                                             initialGlyph=""
                                             delayIndex={2 + tileIndex}
+                                            liftOnHover={!isStatic}
                                         />
                                     );
                                 })}

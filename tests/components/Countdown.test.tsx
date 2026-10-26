@@ -32,4 +32,29 @@ describe("Countdown", () => {
 
         expect(screen.getByRole("status")).toHaveTextContent("Grand Theft Auto VI is out now");
     });
+
+    it("spells OUT NOW !!! across three groups of three tiles", () => {
+        const { container } = render(<Countdown remaining={0} stage="revealed" />);
+        const groups = [...container.querySelectorAll("[role='status'] [aria-hidden='true']")];
+
+        expect(groups.map((group) => group.textContent)).toEqual(["OOUUTT", "NNOOWW", "!!!!!!"]);
+    });
+
+    it("drops the entrance animation, tilt and hover lift in static mode", () => {
+        const { container } = render(
+            <Countdown remaining={TWENTY_SIX_DAYS} stage="counting" isStatic />,
+        );
+
+        expect(container.querySelector("[data-static='true']")).not.toBeNull();
+        expect(container.querySelector(".rise-in")).toBeNull();
+        expect(container.querySelector("[class*='liftable']")).toBeNull();
+    });
+
+    it("keeps the animations on the main page", () => {
+        const { container } = render(<Countdown remaining={TWENTY_SIX_DAYS} stage="counting" />);
+
+        expect(container.querySelector("[data-static='false']")).not.toBeNull();
+        expect(container.querySelectorAll(".rise-in")).toHaveLength(4);
+        expect(container.querySelectorAll("[class*='liftable']")).toHaveLength(8);
+    });
 });

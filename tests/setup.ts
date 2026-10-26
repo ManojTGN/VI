@@ -2,7 +2,6 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 
-/** Drives the same <html data-motion> attribute the app reads at runtime. */
 export function setMotionPreference(preference: "full" | "reduced") {
     document.documentElement.dataset.motion = preference;
 }

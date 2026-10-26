@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 const documentEvents = ["visibilitychange", "resume"];
 const windowEvents = ["focus", "pageshow"];
 
-export function useCountdown(target: number | null, clockOffset = 0) {
+export function useCountdown(target: number | null, clockOffset = 0, host?: Window | null) {
     const [remaining, setRemaining] = useState<number | null>(null);
 
     useEffect(() => {
@@ -13,35 +13,36 @@ export function useCountdown(target: number | null, clockOffset = 0) {
             return;
         }
 
+        const view = host ?? window;
+        const hostDocument = view.document;
         let timeoutId: number | undefined;
 
         const tick = () => {
-            window.clearTimeout(timeoutId);
+            view.clearTimeout(timeoutId);
             const next = Math.max(0, target - (Date.now() + clockOffset));
             setRemaining(next);
 
             if (next > 0) {
-                timeoutId = window.setTimeout(tick, (next % 1000 || 1000) + 20);
+                timeoutId = view.setTimeout(tick, (next % 1000 || 1000) + 20);
             }
         };
 
         const resync = () => {
-            if (document.visibilityState === "visible") {
+            if (hostDocument.visibilityState === "visible") {
                 tick();
             }
         };
 
-        const frameId = requestAnimationFrame(tick);
-        documentEvents.forEach((name) => document.addEventListener(name, resync));
-        windowEvents.forEach((name) => window.addEventListener(name, resync));
+        timeoutId = view.setTimeout(tick, 0);
+        documentEvents.forEach((name) => hostDocument.addEventListener(name, resync));
+        windowEvents.forEach((name) => view.addEventListener(name, resync));
 
         return () => {
-            cancelAnimationFrame(frameId);
-            window.clearTimeout(timeoutId);
-            documentEvents.forEach((name) => document.removeEventListener(name, resync));
-            windowEvents.forEach((name) => window.removeEventListener(name, resync));
+            view.clearTimeout(timeoutId);
+            documentEvents.forEach((name) => hostDocument.removeEventListener(name, resync));
+            windowEvents.forEach((name) => view.removeEventListener(name, resync));
         };
-    }, [target, clockOffset]);
+    }, [target, clockOffset, host]);
 
     return remaining;
 }

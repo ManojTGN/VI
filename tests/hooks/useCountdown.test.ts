@@ -24,7 +24,7 @@ describe("useCountdown", () => {
     it("ticks on whole seconds and stops at zero", () => {
         const { result } = renderHook(() => useCountdown(START + 3500));
 
-        act(() => vi.advanceTimersToNextFrame());
+        act(() => vi.advanceTimersByTime(0));
         expect(result.current).toBe(START + 3500 - Date.now());
 
         act(() => vi.advanceTimersByTime(520));
@@ -38,14 +38,14 @@ describe("useCountdown", () => {
     it("is zero immediately when the target is in the past", () => {
         const { result } = renderHook(() => useCountdown(START - 60_000));
 
-        act(() => vi.advanceTimersToNextFrame());
+        act(() => vi.advanceTimersByTime(0));
 
         expect(result.current).toBe(0);
     });
 
     it("corrects itself when the tab wakes up after the clock moved on", () => {
         const { result } = renderHook(() => useCountdown(START + 3_600_000));
-        act(() => vi.advanceTimersToNextFrame());
+        act(() => vi.advanceTimersByTime(0));
 
         vi.setSystemTime(START + 1_800_000);
         act(() => {
@@ -59,10 +59,10 @@ describe("useCountdown", () => {
         const { result, rerender } = renderHook(({ target }) => useCountdown(target), {
             initialProps: { target: START + 10_000 },
         });
-        act(() => vi.advanceTimersToNextFrame());
+        act(() => vi.advanceTimersByTime(0));
 
         rerender({ target: START + 90_000 });
-        act(() => vi.advanceTimersToNextFrame());
+        act(() => vi.advanceTimersByTime(0));
 
         expect(result.current).toBe(START + 90_000 - Date.now());
     });
@@ -71,15 +71,31 @@ describe("useCountdown", () => {
         const clockOffset = 5 * 60_000;
         const { result } = renderHook(() => useCountdown(START + 3_600_000, clockOffset));
 
-        act(() => vi.advanceTimersToNextFrame());
+        act(() => vi.advanceTimersByTime(0));
 
         expect(result.current).toBe(START + 3_600_000 - (Date.now() + clockOffset));
+    });
+
+    it("can run on another window's timers, such as a Picture-in-Picture window", () => {
+        const host = Object.assign(new EventTarget(), {
+            document,
+            setTimeout: vi.fn(window.setTimeout.bind(window)),
+            clearTimeout: vi.fn(window.clearTimeout.bind(window)),
+        }) as unknown as Window;
+        const ownSetTimeout = vi.spyOn(window, "setTimeout");
+
+        const { result } = renderHook(() => useCountdown(START + 5_500, 0, host));
+        act(() => vi.advanceTimersByTime(0));
+
+        expect(result.current).toBe(START + 5_500 - Date.now());
+        expect(host.setTimeout).toHaveBeenCalled();
+        expect(ownSetTimeout).not.toHaveBeenCalledWith(expect.any(Function), expect.any(Number));
     });
 
     it("cleans up timers and listeners on unmount", () => {
         const removeListener = vi.spyOn(document, "removeEventListener");
         const { unmount } = renderHook(() => useCountdown(START + 60_000));
-        act(() => vi.advanceTimersToNextFrame());
+        act(() => vi.advanceTimersByTime(0));
 
         unmount();
 

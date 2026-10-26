@@ -66,8 +66,6 @@ export function resetMotionCache() {
 export function useMotion() {
     const motion = useSyncExternalStore(subscribe, readPreference, readNothing);
 
-    // Keeps <html data-motion> in step with the store after a change here or in
-    // another tab. The inline script covers the very first paint.
     useEffect(() => {
         if (motion) {
             applyMotionPreference(motion);

@@ -10,6 +10,7 @@ type FlipTileProps = {
     glyph: string;
     initialGlyph?: string;
     delayIndex?: number;
+    liftOnHover?: boolean;
 };
 
 type FlipState = {
@@ -33,7 +34,12 @@ function TileHalf({ side, glyph, className }: TileHalfProps) {
     );
 }
 
-export function FlipTile({ glyph, initialGlyph, delayIndex = 0 }: FlipTileProps) {
+export function FlipTile({
+    glyph,
+    initialGlyph,
+    delayIndex = 0,
+    liftOnHover = true,
+}: FlipTileProps) {
     const [state, setState] = useState<FlipState>(() => ({
         current: initialGlyph ?? glyph,
         previous: initialGlyph ?? glyph,
@@ -53,7 +59,7 @@ export function FlipTile({ glyph, initialGlyph, delayIndex = 0 }: FlipTileProps)
     const style = { "--flip-delay": `${state.delayIndex * STAGGER_MS}ms` } as CSSProperties;
 
     return (
-        <span className={styles.tile} style={style}>
+        <span className={clsx(styles.tile, liftOnHover && styles.liftable)} style={style}>
             <TileHalf side="top" glyph={state.current} />
             <TileHalf side="bottom" glyph={state.previous} />
             {state.flips > 0 && (
